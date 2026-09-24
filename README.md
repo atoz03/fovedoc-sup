@@ -4,6 +4,8 @@ Supporting materials for the ICASSP 2027 submission
 **"Found but Not Read: When Extracted Text Closes the Retrieval–Reading Gap in Document
 Vision–Language Models"**.
 
+Project page: https://atoz03.github.io/fovedoc-sup/
+
 This repository contains:
 
 - the **FoveDoc-Bench** annotations (2,346 questions over 1,173 born-digital documents, each with its answer and evidence pages, blocks and excerpts),

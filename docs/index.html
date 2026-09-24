@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Found but Not Read</title>
+<meta name="description" content="With every evidence page retrieved, document VLMs still leave evidence unused. Extracted text recovers 13–16 points of strict accuracy — an amplifier of retrieval that works, not a substitute for retrieval that does not.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Found but Not Read: When Extracted Text Closes the Retrieval–Reading Gap in Document Vision–Language Models">
+<meta property="og:description" content="A paired protocol isolates the retrieval–reading gap in document VLMs: evidence found but not used.">
+<meta property="og:image" content="https://atoz03.github.io/fovedoc-sup/static/fig1-design-og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fbfbf9;
+    --surface: #ffffff;
+    --surface-2: #f3f3ef;
+    --ink: #1b1d21;
+    --ink-2: #474b53;
+    --ink-3: #6e737c;
+    --line: #e2e2dc;
+    --accent: #2563c9;
+    --accent-soft: #e8effb;
+    --neg: #b3402f;
+    --fig-bg: #ffffff;
+    --code-bg: #f3f3ef;
+    --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --serif: "Source Serif 4", "Source Serif Pro", Georgia, "Times New Roman", serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg: #15171a;
+      --surface: #1c1f23;
+      --surface-2: #23262b;
+      --ink: #eceae4;
+      --ink-2: #c3c1bb;
+      --ink-3: #9a9892;
+      --line: #32353b;
+      --accent: #7ea9f0;
+      --accent-soft: #1f2a3d;
+      --neg: #e58a78;
+      --fig-bg: #ffffff;
+      --code-bg: #1f2226;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 var(--sans);
+    -webkit-font-smoothing: antialiased;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+  }
+  img { max-width: 100%; height: auto; display: block; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  .wrap { max-width: 980px; margin: 0 auto; padding-inline: max(20px, env(safe-area-inset-left, 0px)); }
+  .wide { max-width: 1240px; }
+
+  /* ---------- hero ---------- */
+  header.hero { padding-block: 64px 28px; text-align: center; }
+  .kicker { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; margin: 0 0 18px; }
+  h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(34px, 6vw, 56px); line-height: 1.05; margin: 0; letter-spacing: -.01em; }
+  .subtitle { font-family: var(--serif); font-weight: 600; font-size: clamp(19px, 2.6vw, 25px); line-height: 1.3; color: var(--ink-2); margin: 14px auto 0; max-width: 780px; }
+  .authors { margin: 28px 0 4px; font-size: 17px; }
+  .authors span { white-space: nowrap; margin: 0 .45em; }
+  .authors sup { color: var(--ink-3); font-size: 11px; }
+  .affil { color: var(--ink-3); font-size: 15px; margin: 0; }
+  .affil .note { font-size: 13px; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 26px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 18px; border-radius: 999px;
+    background: var(--ink); color: var(--bg);
+    font-weight: 600; font-size: 15px; text-decoration: none;
+    transition: transform .12s ease, opacity .12s ease;
+  }
+  .btn:hover { transform: translateY(-1px); opacity: .9; }
+  .btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .btn svg { width: 17px; height: 17px; }
+
+  /* ---------- nav ---------- */
+  nav.toc {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(8px); -webkit-backdrop-filter: saturate(1.4) blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  nav.toc .wrap { display: flex; gap: 22px; overflow-x: auto; scrollbar-width: none; padding-block: 10px; }
+  nav.toc .wrap::-webkit-scrollbar { display: none; }
+  nav.toc a { color: var(--ink-2); text-decoration: none; font-size: 14px; font-weight: 500; white-space: nowrap; }
+  nav.toc a:hover { color: var(--ink); }
+
+  /* ---------- sections ---------- */
+  section { padding-block: 44px; }
+  section + section { border-top: 1px solid var(--line); }
+  h2 { font-family: var(--serif); font-size: clamp(26px, 3.4vw, 32px); line-height: 1.2; margin: 0 0 6px; letter-spacing: -.005em; }
+  .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
+  h3 { font-size: 18px; margin: 30px 0 6px; }
+  p { margin: 12px 0; color: var(--ink-2); }
+  p strong, li strong { color: var(--ink); }
+  .lead { font-size: 18px; color: var(--ink); }
+  .takeaway {
+    margin: 22px 0 0; padding: 14px 18px; border-left: 3px solid var(--accent);
+    background: var(--accent-soft); border-radius: 0 10px 10px 0; color: var(--ink);
+  }
+  .takeaway b { font-weight: 700; }
+
+  /* ---------- figures ---------- */
+  figure { margin: 26px 0 0; }
+  .fig-card { background: var(--fig-bg); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .fig-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .fig-scroll img { min-width: 760px; width: 100%; }
+  .fig-scroll.narrow img { min-width: 520px; }
+  .fig-small { max-width: 620px; margin-inline: auto; }
+  figcaption { font-size: 14px; color: var(--ink-3); margin-top: 10px; line-height: 1.55; }
+  figcaption b { color: var(--ink-2); }
+  figcaption a { white-space: nowrap; }
+  .scroll-hint { display: none; font-size: 12px; color: var(--ink-3); margin-top: 6px; }
+  @media (max-width: 800px) { .scroll-hint { display: block; } }
+
+  /* ---------- stat tiles ---------- */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 28px; }
+  @media (max-width: 860px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 460px) { .stats { grid-template-columns: 1fr; } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 16px; }
+  .stat .value { font-family: var(--sans); font-weight: 600; font-size: 34px; line-height: 1.1; letter-spacing: -.02em; color: var(--ink); }
+  .stat .label { font-size: 14px; line-height: 1.45; color: var(--ink-2); margin-top: 8px; }
+  .stat .detail { font-size: 12.5px; color: var(--ink-3); margin-top: 6px; }
+
+  /* ---------- tables ---------- */
+  .table-scroll { overflow-x: auto; margin-top: 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  .tnote { font-size: 13.5px; color: var(--ink-3); margin: 8px 2px 0; line-height: 1.5; }
+  th, td { padding: 10px 14px; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 7.5em; }
+  thead th { font-size: 12.5px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-3); border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  tbody tr + tr td { border-top: 1px solid var(--line); }
+  td { font-variant-numeric: tabular-nums; color: var(--ink); }
+  td.em { font-weight: 700; }
+  table.label-wide td:first-child { min-width: 13em; }
+  td.neg { color: var(--neg); }
+  td.sub { padding-left: 32px; color: var(--ink-2); }
+  td .pct { color: var(--ink-3); font-size: 13px; margin-left: 4px; }
+
+  /* ---------- two-column blocks ---------- */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 22px; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .card h4 { margin: 0 0 4px; font-size: 16px; }
+  .card p { margin: 6px 0 0; font-size: 15px; }
+  ol.findings { padding-left: 1.2em; margin: 14px 0 0; color: var(--ink-2); }
+  ol.findings li { margin: 8px 0; }
+
+  /* ---------- code ---------- */
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 18px; overflow-x: auto; font: 13px/1.6 var(--mono); color: var(--ink); margin: 0;
+  }
+  .bib { position: relative; margin-top: 18px; }
+  .copy {
+    position: absolute; top: 10px; right: 10px;
+    font: 600 13px var(--sans); color: var(--ink-2); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 8px; padding: 5px 11px; cursor: pointer;
+  }
+  .copy:hover { color: var(--ink); }
+
+  footer { padding-block: 34px 48px; color: var(--ink-3); font-size: 13.5px; border-top: 1px solid var(--line); text-align: center; }
+</style>
+</head>
+<body>
+
+<header class="hero wrap">
+  <p class="kicker">ICASSP 2027 submission</p>
+  <h1>Found but Not Read</h1>
+  <p class="subtitle">When Extracted Text Closes the Retrieval–Reading Gap in Document Vision–Language Models</p>
+  <p class="authors">
+    <span>Qingtao Xia</span>
+    <span>Siyao Cheng<sup>✉</sup></span>
+    <span>Jiahua Bao</span>
+    <span>Jiaxing Du</span>
+    <span>Jie Liu</span>
+  </p>
+  <p class="affil">Harbin Institute of Technology, Harbin, China &nbsp;<span class="note">✉ corresponding author</span></p>
+  <div class="buttons">
+    <a class="btn" href="https://github.com/atoz03/fovedoc-sup">
+      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      Code
+    </a>
+    <a class="btn ghost" href="https://github.com/atoz03/fovedoc-sup/tree/main/benchmark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"/></svg>
+      FoveDoc-Bench
+    </a>
+    <a class="btn ghost" href="https://github.com/atoz03/fovedoc-sup/tree/main/results">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+      Results &amp; predictions
+    </a>
+    <a class="btn ghost" href="#bibtex">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      BibTeX
+    </a>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <div class="wrap">
+    <a href="#overview">Overview</a>
+    <a href="#abstract">Abstract</a>
+    <a href="#gap">The gap</a>
+    <a href="#readers">Six readers</a>
+    <a href="#localization">Read vs. find</a>
+    <a href="#modality">Modality boundary</a>
+    <a href="#retrieval">Retrieval boundary</a>
+    <a href="#benchmark">FoveDoc-Bench</a>
+    <a href="#bibtex">BibTeX</a>
+  </div>
+</nav>
+
+<main>
+
+<section id="overview">
+  <div class="wrap wide">
+    <figure>
+      <div class="fig-card fig-scroll">
+        <a href="static/fig1-design.webp"><img src="static/fig1-design.webp" width="4370" height="1363" alt="The paired protocol: ColQwen2 retrieves 16 page images per question; one frozen VLM answers from the images alone (arm A) and from the same images plus 16 CPU-OCR blocks (arm B); strict accuracy rises on both V-NIAH and V-MQAR."></a>
+      </div>
+      <p class="scroll-hint">Scroll sideways, or tap the figure for full resolution.</p>
+      <figcaption>
+        <b>The paired protocol and its headline result.</b> <b>Preparation:</b> ColQwen2 retrieves 16 page
+        images per question at saturated recall. <b>Step 1:</b> one frozen VLM answers from the images (arm A)
+        and from the same images plus the 16 CPU-OCR blocks scoring highest against the question (arm B), so
+        Δ is evidence the reader did not use from pixels already in its context. <b>Step 2:</b> strict accuracy
+        (Qwen3-VL-2B, n = 1,173 per task) and one verbatim evidence case per direction.
+      </figcaption>
+    </figure>
+  </div>
+  <div class="wrap wide">
+    <div class="stats">
+      <div class="stat">
+        <div class="value">+13–16 pts</div>
+        <div class="label">Strict accuracy from adding CPU-OCR text to the same retrieved page images</div>
+        <div class="detail">+13.4 V-MQAR · +15.7 V-NIAH · both p &lt; 10⁻²³</div>
+      </div>
+      <div class="stat">
+        <div class="value">≈ 2×</div>
+        <div class="label">The gain when the text comes from the exact born-digital text layer</div>
+        <div class="detail">+27.9 V-MQAR · +34.2 V-NIAH</div>
+      </div>
+      <div class="stat">
+        <div class="value">6 of 6</div>
+        <div class="label">Stock VLMs from three model families that gain from the text layer</div>
+        <div class="detail">all 12 reader × task cells at p &lt; 10⁻¹³</div>
+      </div>
+      <div class="stat">
+        <div class="value">87–92%</div>
+        <div class="label">Of the text gain recovered by image crops of the evidence blocks. Red boxes on the page recover none</div>
+        <div class="detail">V-MQAR 87% · V-NIAH 92%</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="abstract">
+  <div class="wrap">
+    <p class="eyebrow">Abstract</p>
+    <h2>Evidence found but not used</h2>
+    <p class="lead">
+      Retrieval-augmented document question answering assumes that once the right page is found, a
+      vision–language model (VLM) can read it. We show that this assumption often fails, leaving a
+      <strong>retrieval–reading gap</strong>: evidence found but not used.
+    </p>
+    <p>
+      A paired protocol isolates this gap by comparing answers from the retrieved page images alone with
+      answers from the same images plus their extracted text. On FoveDoc-Bench, our benchmark with traceable
+      evidence, retrieval finds nearly every evidence page, yet adding CPU-OCR text raises strict accuracy by
+      13 to 16 points. An exact text layer roughly doubles the gain, which appears across six VLMs from three
+      families and, within one family, narrows with scale without closing. The reader can read this evidence
+      but cannot find it: crops of it recover most of the text gain, boxes around it on the page none.
+    </p>
+    <p>
+      The same protocol identifies two boundaries. Extracted text helps on textual evidence but is neutral or
+      harmful on charts and figures. Its advantage shrinks as retrieval degrades, and unrelated text of the
+      same form adds nothing detectable. <strong>Extracted text is an amplifier of retrieval that works, not a
+      substitute for retrieval that does not.</strong>
+    </p>
+  </div>
+</section>
+
+<section id="gap">
+  <div class="wrap">
+    <p class="eyebrow">The retrieval–reading gap</p>
+    <h2>Reading is not the easy part</h2>
+    <p>
+      The protocol holds retrieval at saturation, so nearly every evidence page is in front of the reader
+      (full recall@16 is 1.000 on V-NIAH and 0.998 on V-MQAR), and asks the same question twice: once from the
+      16 retrieved page images, once from the same images plus a text memory extracted from them: the 16 text
+      blocks that score highest lexically against the question, at most 300 characters each. Nothing is
+      removed, so any improvement is evidence the reader held and did not use.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Task</th><th>Images</th><th>+ OCR</th><th>+ PDF text layer</th><th>Δ OCR</th><th>Δ PDF</th><th>OCR retains</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>V-MQAR</td><td>0.153</td><td class="em">0.287</td><td>0.432</td><td>+0.134</td><td>+0.279</td><td>48%</td></tr>
+          <tr><td>V-NIAH</td><td>0.350</td><td class="em">0.506</td><td>0.691</td><td>+0.157</td><td>+0.342</td><td>46%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">Strict accuracy, stock Qwen3-VL-2B-Instruct, n = 1,173 per task, paired on identical pages. OCR is RapidOCR (PP-OCR models) on CPU over the rendered pages; the PDF text layer is the exact born-digital text. OCR contrasts: 95% CIs [+0.109, +0.158] and [+0.127, +0.187], both p &lt; 10⁻²³.</p>
+    <p>
+      What OCR gives up is fidelity, not volume. At the fixed block budget the OCR arm packs <em>more</em>
+      characters than the text-layer arm on 77% of samples. But the best packable OCR block recovers 76% of a
+      gold excerpt's tokens on average: the share of the text-layer gain that OCR keeps tracks the share of
+      gold evidence that OCR returns intact.
+    </p>
+  </div>
+</section>
+
+<section id="readers">
+  <div class="wrap">
+    <p class="eyebrow">Across backbones</p>
+    <h2>The gap is not a property of one backbone</h2>
+    <p>
+      With the text-layer memory, the gain appears in all six stock readers we test: Qwen3-VL-2B/4B/8B,
+      Qwen2.5-VL-7B, LLaVA-OneVision-7B and Idefics3-8B. Within Qwen3-VL, at identical settings, it narrows
+      monotonically with scale, from +0.28 to +0.23 on V-MQAR and from +0.36 to +0.23 on V-NIAH between 2B and
+      8B. A stronger visual reader needs the text less, and at 8B still needs it.
+    </p>
+    <figure class="fig-small">
+      <div class="fig-card fig-scroll narrow">
+        <a href="static/fig2-readers.svg"><img src="static/fig2-readers.svg" alt="Dumbbell plot of strict accuracy from images to images plus text-layer memory for six readers on V-MQAR and V-NIAH, and the Qwen3-VL gain shrinking from 2B to 8B."></a>
+      </div>
+      <figcaption>
+        <b>(a)</b> Strict accuracy from images (grey) to images plus text-layer memory (blue), first 400 samples
+        per task; labels give the paired gain in points. <sup>†</sup>Image splitting disabled or pixels capped to
+        fit 16 pages. <b>(b)</b> Within Qwen3-VL the gap narrows with scale and is still +0.23 at 8B.
+      </figcaption>
+    </figure>
+    <p>
+      Cheaper levers do not close it. With a 4B reader on V-MQAR, doubling the block budget, a union selector
+      and a reasoning-mode reader each move accuracy by at most +0.03; self-ask decomposition costs −0.043; a 2B
+      LoRA recovers +0.06 on V-MQAR and +0.05 on V-NIAH, and a 4B LoRA adds +0.009.
+    </p>
+  </div>
+</section>
+
+<section id="localization">
+  <div class="wrap">
+    <p class="eyebrow">Evidence accessibility</p>
+    <h2>The reader can read the evidence but cannot find it</h2>
+    <p>
+      Three paired controls locate the failure. The 16 page images stay fixed in every arm; only what is added
+      to them changes.
+    </p>
+    <div class="table-scroll">
+      <table class="label-wide">
+        <thead>
+          <tr><th>Added to the 16 page images</th><th>V-MQAR</th><th>V-NIAH</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>All OCR text of the 16 pages, reading order, no selection</td><td>+0.179</td><td>+0.221</td></tr>
+          <tr><td>16 OCR blocks selected against the question (neutral prompt)</td><td>+0.141</td><td>+0.165</td></tr>
+          <tr><td>The same 16 blocks as image crops, no text</td><td class="em">+0.123<span class="pct">87%</span></td><td class="em">+0.152<span class="pct">92%</span></td></tr>
+          <tr><td>Red boxes around the same blocks on the pages, no text</td><td>+0.005</td><td class="neg">−0.030</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">Paired gain in strict accuracy over the images arm, stock Qwen3-VL-2B, n = 1,173 per task. Percentages are the share of the 16-block text gain the crops recover. Crops are cut at the reader's own page pixel density.</p>
+    <p>
+      The crops carry pixels the pages already held. The reader can read the evidence but cannot find it among
+      16 dense pages; lifting it out, as text or as a crop, makes it usable. Pointing at it on the page does
+      not.
+    </p>
+    <p class="takeaway"><b>Page-level retrieval is not evidence-level retrieval.</b> With every gold page in view, the reader still leaves 13 to 16 points of evidence unused in every backbone we test. Lifting the evidence off the page recovers it, with or without question-conditioned selection.</p>
+  </div>
+</section>
+
+<section id="modality">
+  <div class="wrap">
+    <p class="eyebrow">Boundary 1</p>
+    <h2>The benefit follows the evidence modality</h2>
+    <p>
+      MMLongBench-Doc differs in the two respects that matter: its evidence is mostly graphical, and its
+      retrieval is not saturated (full recall@16 is 0.844). On the 414 questions with exactly one evidence tag,
+      the paired effect is <strong>+0.085 on text</strong> (n = 129) against <strong>−0.046 on charts or
+      figures</strong> (n = 285), a difference of +0.131 [+0.046, +0.215] (p = 0.0024). A flat transcript
+      discards the structure a chart or figure encodes.
+    </p>
+    <figure class="fig-small">
+      <div class="fig-card fig-scroll narrow">
+        <a href="static/fig3-external.svg"><img src="static/fig3-external.svg" alt="Left: ColQwen2 full recall at k for MMLongBench-Doc, V-NIAH and V-MQAR. Right: memory minus images gain on MMLongBench-Doc by evidence tag; text gains, charts and figures lose."></a>
+      </div>
+      <figcaption>
+        <b>(a)</b> ColQwen2 full recall@k: V-NIAH and V-MQAR (1,173 each) and MMLongBench-Doc (845 questions with
+        gold pages). <b>(b)</b> MMLongBench-Doc memory − images by evidence tag (tags overlap, 95% CIs) and, below
+        the rule, on the 414 single-tag questions.
+      </figcaption>
+    </figure>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>MMLongBench-Doc stratum</th><th>n</th><th>Images</th><th>+ Memory</th><th>Δ</th><th>p</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Answerable, annotated</td><td>838</td><td>0.220</td><td>0.223</td><td>+0.004</td><td>0.86</td></tr>
+          <tr><td class="sub">full recall@16</td><td>706</td><td>0.227</td><td>0.242</td><td>+0.016</td><td>0.32</td></tr>
+          <tr><td class="sub">partial recall</td><td>132</td><td>0.182</td><td>0.121</td><td class="neg">−0.061</td><td>0.099</td></tr>
+          <tr><td>Unanswerable</td><td>244</td><td>0.041</td><td>0.090</td><td>+0.049</td><td>0.014</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">Paired strict accuracy; same reader, retriever, memory builder and judge as on FoveDoc-Bench. Bonferroni α = 0.0125 over the four strata.</p>
+    <p>
+      Chart and figure evidence weighs 55% of the reading questions against 23% text-only, so the two effects
+      cancel in aggregate: the pooled advantage is +0.004. On unanswerable questions the memory arm more often
+      reports that the text contains no answer, where the image arm makes one up.
+    </p>
+    <p class="takeaway"><b>A modality boundary.</b> Extracted text helps textual evidence and hurts graphical evidence. An aggregate over a mixed benchmark hides the 13.1-point contrast.</p>
+  </div>
+</section>
+
+<section id="retrieval">
+  <div class="wrap">
+    <p class="eyebrow">Boundary 2</p>
+    <h2>Retrieved evidence buys most of the advantage</h2>
+    <p>
+      Retrieval on FoveDoc-Bench is saturated, so we degrade it by hand. FoveDoc-Bench's evidence annotations
+      make three controls possible:
+    </p>
+    <ol class="findings">
+      <li><strong>Control 1</strong> withdraws gold pages and substitutes pages ranked below the top 16, so recall moves and the page budget does not.</li>
+      <li><strong>Control 2</strong> drops zero-recall samples whose packed memory still contains the answer string, so the residual is not a leaked answer.</li>
+      <li><strong>Control 3</strong> replaces each document's memory with another document's text under the same packing rule, so only <em>whose</em> text it is changes.</li>
+    </ol>
+  </div>
+  <div class="wrap wide">
+    <figure>
+      <div class="fig-card fig-scroll">
+        <a href="static/fig4-controls.webp"><img src="static/fig4-controls.webp" width="4370" height="1003" alt="Three controls: withdrawing gold pages at a fixed 16-page budget, filtering answer-string leakage, and swapping in another document's text."></a>
+      </div>
+      <figcaption><b>Three controls on the memory advantage</b>, all with OCR memory, each shown on a real sample.</figcaption>
+    </figure>
+    <figure>
+      <div class="fig-card fig-scroll">
+        <a href="static/fig5-sweep.svg"><img src="static/fig5-sweep.svg" alt="The memory advantage falls as gold pages are withdrawn; foreign-document memory tracks the image arm; the leak-free zero-recall residual is own-document context."></a>
+      </div>
+      <figcaption>
+        <b>(a, b)</b> The memory advantage falls monotonically as gold pages are withdrawn; foreign-document text
+        tracks the image arm at both endpoints. <b>(c)</b> At zero recall the leak-free residual survives, but
+        foreign-document memory of identical form is indistinguishable from the image arm. Error bars are 95% CIs.
+      </figcaption>
+    </figure>
+  </div>
+  <div class="wrap">
+    <p>
+      The advantage falls from +0.125 through +0.066 at half recall to +0.030 on V-MQAR, and from +0.149 to
+      +0.043 on V-NIAH. The within-sample change is +0.095 and +0.106 (both p &lt; 10⁻⁹): roughly three quarters
+      of the full-recall advantage is bought by the gold pages being present. On leak-free samples the
+      zero-recall residual is +0.028 on both tasks, and own − foreign memory accounts for all of it. Even at
+      full recall, foreign text is inert rather than harmful; what hurts the reader is relevant text in the
+      wrong modality, not irrelevant text.
+    </p>
+    <p class="takeaway"><b>A retrieval boundary.</b> Three quarters of the advantage is bought by retrieved evidence and the rest by the document's own context. Unrelated text of the same form adds nothing detectable.</p>
+  </div>
+</section>
+
+<section id="benchmark">
+  <div class="wrap">
+    <p class="eyebrow">Resource</p>
+    <h2>FoveDoc-Bench</h2>
+    <p>
+      These interventions need evidence that can be traced, withdrawn and re-presented. FoveDoc-Bench has
+      <strong>2,346 questions over 1,173 born-digital documents</strong>: annual and technical reports, manuals,
+      academic papers and illustrated technical blogs. Each question carries its answer, a 16–24-page context
+      numbered as in the source, and the evidence pages, blocks and excerpts behind it. <strong>V-NIAH</strong>
+      asks for one evidence block on one page; <strong>V-MQAR</strong> joins two blocks on distinct pages. All
+      1,173 documents are held out from the auxiliary training and validation pools.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Benchmark</th><th>Questions</th><th>Pages / doc</th><th>Gold pages</th><th>Recall@16</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>V-NIAH</td><td>1,173</td><td>16–24</td><td>1</td><td>1.000</td></tr>
+          <tr><td>V-MQAR</td><td>1,173</td><td>16–24</td><td>2</td><td>0.998</td></tr>
+          <tr><td>MMLongBench-Doc (external)</td><td>1,091</td><td>≤ 468</td><td>0–n</td><td>0.844</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">Recall@16 is the fraction of questions whose every gold page is among the 16 pages ColQwen2 retrieves.</p>
+    <div class="cols">
+      <div class="card">
+        <h4>What the repository contains</h4>
+        <p>The benchmark annotations; a document manifest with source, origin URL and SHA-256; ColQwen2 page rankings; the result tables behind every number in the paper; 51,242 per-question judged predictions; and the code for the full protocol.</p>
+      </div>
+      <div class="card">
+        <h4>Scoring</h4>
+        <p>An LLM judge grades each answer; strict accuracy counts only <code>correct</code>. Every arm of a contrast is graded in one session by one judge, and each contrast is tested with McNemar's test on its discordant pairs.</p>
+      </div>
+    </div>
+    <h3>One question</h3>
+    <pre>{
+  "id": "gemini32_vmqar_resume_v2_20260314:vmqar:&lt;document_id&gt;:6-29",
+  "benchmark": "V-MQAR",
+  "question": "Based on the provided mathematical derivations, what is the upper bound for $1 + \\|g_t\\|^2$ and …",
+  "answers": ["The upper bound for $1 + \\|g_t\\|^2$ is $1 + \\tau_t$, and …"],
+  "images": ["render/&lt;document_id&gt;/page_0006.png", "…", "render/&lt;document_id&gt;/page_0029.png"],
+  "meta": {"evidence": [
+    {"page_id": 16, "block_id": "p16_b24", "text_excerpt": "Using the definition of α t , we derive: …"},
+    {"page_id": 20, "block_id": "p20_b14", "text_excerpt": "E[f (x T ) − f ∗ ] = E[ f ˆ T ] = …"}
+  ]}
+}</pre>
+  </div>
+</section>
+
+<section id="takeaways">
+  <div class="wrap">
+    <p class="eyebrow">Conclusion</p>
+    <h2>Two practical conclusions</h2>
+    <div class="cols">
+      <div class="card">
+        <h4>Gate OCR, don't apply it everywhere</h4>
+        <p>An OCR-then-read stage belongs in text-evidenced document QA over strong retrieval, gated on retrieval quality and evidence modality rather than applied to every page.</p>
+      </div>
+      <div class="card">
+        <h4>Stratify the evaluation</h4>
+        <p>The same intervention measures +0.13 on FoveDoc-Bench and +0.004 on MMLongBench-Doc, and both numbers are right. Evaluations should report results by recall and evidence modality.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="bibtex">
+  <div class="wrap">
+    <p class="eyebrow">Citation</p>
+    <h2>BibTeX</h2>
+    <div class="bib">
+      <button class="copy" type="button" id="copy-bib">Copy</button>
+<pre id="bib-text">@misc{xia2026foundbutnotread,
+  title  = {Found but Not Read: When Extracted Text Closes the Retrieval--Reading Gap
+            in Document Vision--Language Models},
+  author = {Xia, Qingtao and Cheng, Siyao and Bao, Jiahua and Du, Jiaxing and Liu, Jie},
+  year   = {2026},
+  note   = {Submitted to ICASSP 2027},
+  url    = {https://github.com/atoz03/fovedoc-sup}
+}</pre>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    Found but Not Read · Harbin Institute of Technology · <a href="https://github.com/atoz03/fovedoc-sup">github.com/atoz03/fovedoc-sup</a>
+  </div>
+</footer>
+
+<script>
+  // 复制 BibTeX；剪贴板不可用时退回到选中文本，让用户手动复制
+  document.getElementById("copy-bib").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const text = document.getElementById("bib-text").textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = "Copied";
+    } catch {
+      const range = document.createRange();
+      range.selectNodeContents(document.getElementById("bib-text"));
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      btn.textContent = "Selected";
+    }
+    setTimeout(() => { btn.textContent = "Copy"; }, 1600);
+  });
+</script>
+</body>
+</html>
