@@ -1,0 +1,15 @@
+# Decoding-matched control for lever B1: stock Qwen3-VL-4B-Instruct at B1's sampling settings.
+# Isolates "reasoning" from "sampling": B1 used t=0.6/top_p=0.95 vs a greedy baseline.
+# dma/cross_attn omitted on purpose -> both default to enable=False (verified) = stock model.
+model:
+  path: Qwen/Qwen3-VL-4B-Instruct
+  dtype: bf16
+  attn_implementation: null
+  device_map: auto
+  do_sample: true
+  temperature: 0.6
+  top_p: 0.95
+  repetition_penalty: 1.05
+data:
+  benchmark_root: data/fovedoc_project
+  image_max_pixels: 262144

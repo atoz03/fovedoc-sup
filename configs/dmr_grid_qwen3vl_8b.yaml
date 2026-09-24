@@ -1,0 +1,14 @@
+# Reader-family generalization grid — qwen3vl_8b (stock, no fine-tuning).
+# Read by scripts/run_dmr_oracle_scratchpad_derisk.py --eval-config with --reader-impl hf.
+model:
+  path: Qwen/Qwen3-VL-8B-Instruct
+  dtype: bf16
+  attn_implementation: null
+  device_map: auto
+  do_sample: false
+  temperature: 0.0
+  top_p: 1.0
+  repetition_penalty: 1.05
+data:
+  benchmark_root: data/fovedoc_project
+  image_max_pixels: 262144

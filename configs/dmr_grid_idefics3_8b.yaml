@@ -1,0 +1,17 @@
+# Reader-family generalization grid — idefics3_8b (stock, no fine-tuning).
+# Read by scripts/run_dmr_oracle_scratchpad_derisk.py --eval-config with --reader-impl hf.
+model:
+  path: HuggingFaceM4/Idefics3-8B-Llama3
+  dtype: bf16
+  attn_implementation: null
+  device_map: auto
+  do_sample: false
+  temperature: 0.0
+  top_p: 1.0
+  repetition_penalty: 1.05
+  processor_overrides:
+    # default splitting costs 3036 tok/page (48k for 16 pages); off = 184 tok/page
+    do_image_splitting: false
+data:
+  benchmark_root: data/fovedoc_project
+  image_max_pixels: 262144

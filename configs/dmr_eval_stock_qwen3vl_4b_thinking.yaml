@@ -1,0 +1,17 @@
+# DMR clean-protocol eval reader — STOCK Qwen3-VL-4B-Thinking (lever B1).
+# Same protocol as dmr_eval_stock_qwen3vl_4b.yaml but the reasoning ("Thinking") variant,
+# to test whether an off-the-shelf reasoning reader closes the cross-page JOIN residual.
+# Thinking models degrade under greedy decoding -> use Qwen-recommended sampling.
+# Give the harness a large --max-new-tokens so the reasoning trace isn't truncated.
+model:
+  path: Qwen/Qwen3-VL-4B-Thinking
+  dtype: bf16
+  attn_implementation: null
+  device_map: auto
+  do_sample: true
+  temperature: 0.6
+  top_p: 0.95
+  repetition_penalty: 1.0
+data:
+  benchmark_root: data/fovedoc_project
+  image_max_pixels: 262144

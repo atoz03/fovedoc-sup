@@ -1,0 +1,13 @@
+# Lever C: DMR memory-join LoRA reader (4B base + aux-trained adapter). Eval only.
+model:
+  path: code/runs/20260630/dmr_sft_c_4b/best_val
+  dtype: bf16
+  attn_implementation: null
+  device_map: auto
+  do_sample: false
+  temperature: 0.0
+  top_p: 1.0
+  repetition_penalty: 1.05
+data:
+  benchmark_root: data/fovedoc_project
+  image_max_pixels: 262144

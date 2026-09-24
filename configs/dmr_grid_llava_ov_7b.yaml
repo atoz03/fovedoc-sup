@@ -1,0 +1,15 @@
+# Reader-family generalization grid — llava_ov_7b (stock, no fine-tuning).
+# Read by scripts/run_dmr_oracle_scratchpad_derisk.py --eval-config with --reader-impl hf.
+model:
+  path: llava-hf/llava-onevision-qwen2-7b-ov-hf
+  dtype: bf16
+  attn_implementation: null
+  device_map: auto
+  do_sample: false
+  temperature: 0.0
+  top_p: 1.0
+  repetition_penalty: 1.05
+data:
+  benchmark_root: data/fovedoc_project
+  # LLaVA-OneVision tiles to 1494 tok/page even at 384px; 32k ctx forces the lower cap
+  image_max_pixels: 147456
